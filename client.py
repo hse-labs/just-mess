@@ -1,5 +1,6 @@
 import asyncio
 import websockets
+from aioconsole import ainput, aprint
 from common import enc
 
 SERVER_ADDR = '127.0.0.1'
@@ -20,13 +21,27 @@ async def register(websocket, name):
 
 async def chat(websocket, name):
     while True:
-        msg = {'name': name}
-        payload = input(f"{name}: ")
-        msg['payload'] = payload
-        await websocket.send(enc.encode(msg))
-        resp = await websocket.recv()
-        response = enc.decode(resp)
-        print(f"{response['payload']}")
+
+        while True:
+            resp = await websocket.recv()
+            print(resp)
+            if len(resp) < 1:
+                break
+            response = enc.decode(resp)
+            await aprint(f"{response['payload']}")
+
+
+async def get_response(websocket):
+    resp = await websocket.recv()
+    response = enc.decode(resp)
+    await aprint(f"{response['payload']}")
+
+
+async def send_message(websocket, name):
+    msg = {'name': name}
+    payload = await ainput(f"{name}: ")
+    msg['payload'] = payload
+    await websocket.send(enc.encode(msg))
 
 
 async def main(name):
@@ -34,7 +49,11 @@ async def main(name):
     async with websockets.connect(uri) as websocket:
         reg_status = await register(websocket, name)
         if reg_status:
-            await chat(websocket, name)
+            while True:
+                getting_response = asyncio.create_task(get_response(websocket))
+                sending_messages = asyncio.create_task(send_message(websocket, name))
+                await getting_response
+                await sending_messages
         else:
             return -1
 

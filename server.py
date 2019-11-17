@@ -52,6 +52,6 @@ async def main(websocket, path):
 
 
 if __name__ == '__main__':
-    start_server = websockets.serve(main, "localhost", 8765)
+    start_server = websockets.serve(main, "localhost", 8765, ping_interval=20, ping_timeout=100, close_timeout=500)
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()
